@@ -9,7 +9,37 @@ description = "Privacy-preserving PII tokenization and matching for cross-border
 requires-python = ">=3.10"
 license = {text = "MIT"}
 readme = "README.md"
+authors = [
+    {name = "Keyur Khant", email = "keyurkhant@gmail.com"},
+]
+keywords = [
+    "pii", "tokenization", "privacy", "anonymization", "hashing",
+    "gdpr", "pipeda", "cross-border", "data-transfer", "hmac",
+    "fuzzy-matching", "aes-siv", "argon2", "compliance",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Information Technology",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Security :: Cryptography",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: System :: Archiving",
+    "Typing :: Typed",
+]
 dependencies = []
+
+[project.urls]
+Homepage      = "https://github.com/keyurkhant/tokenvault"
+Repository    = "https://github.com/keyurkhant/tokenvault"
+"Bug Tracker" = "https://github.com/keyurkhant/tokenvault/issues"
+Changelog     = "https://github.com/keyurkhant/tokenvault/blob/master/CHANGELOG.md"
 
 [project.optional-dependencies]
 argon2   = ["argon2-cffi>=23.1"]
