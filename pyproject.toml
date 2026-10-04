@@ -74,3 +74,10 @@ select = ["E", "F", "I", "UP"]
 [tool.mypy]
 python_version = "3.10"
 strict         = true
+
+[[tool.mypy.overrides]]
+# tomllib is stdlib on 3.11+, tomli is the backport for 3.10.
+# The type: ignore[import-not-found] comment is needed on one version
+# but flagged as unused on the other — disable that specific check here.
+module = "tokenvault.cli.commands"
+warn_unused_ignores = false
