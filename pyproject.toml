@@ -1,0 +1,45 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "tokenvault"
+version = "0.1.0"
+description = "Privacy-preserving PII tokenization and matching for cross-border data transfer"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+readme = "README.md"
+dependencies = []
+
+[project.optional-dependencies]
+argon2   = ["argon2-cffi>=23.1"]
+aes-siv  = ["cryptography>=42.0"]
+fuzzy    = ["jellyfish>=1.1"]
+phone    = ["phonenumbers>=8.13"]
+all      = ["tokenvault[argon2,aes-siv,fuzzy,phone]"]
+dev      = [
+    "pytest>=8.0",
+    "hypothesis>=6.100",
+    "pytest-cov>=5.0",
+    "ruff>=0.4",
+    "mypy>=1.10",
+    "tokenvault[all]",
+]
+
+[project.scripts]
+tokenvault = "tokenvault.cli.commands:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts   = "-v --tb=short"
+
+[tool.ruff]
+target-version = "py310"
+line-length    = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
+
+[tool.mypy]
+python_version = "3.10"
+strict         = true
