@@ -10,7 +10,7 @@ requires-python = ">=3.10"
 license = {text = "MIT"}
 readme = "README.md"
 authors = [
-    {name = "Keyur Khant", email = "keyurkhant@gmail.com"},
+    {name = "Keyur Khant", email = "keyurkhant1998@gmail.com"},
 ]
 keywords = [
     "pii", "tokenization", "privacy", "anonymization", "hashing",

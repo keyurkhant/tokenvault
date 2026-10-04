@@ -10,7 +10,7 @@
 
 **Do not open a public GitHub issue for security vulnerabilities.**
 
-Email **keyurkhant@gmail.com** with:
+Email **keyurkhant1998@gmail.com** with:
 
 - A description of the vulnerability and its impact
 - Steps to reproduce or a proof-of-concept (no live PII please)
