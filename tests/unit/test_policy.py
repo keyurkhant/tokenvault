@@ -64,6 +64,16 @@ def test_region_rule_skips_non_transfer():
     assert rule.evaluate("email", "tokenize", {}) is None
 
 
+def test_region_rule_skips_mismatched_origin():
+    rule = RegionRule(
+        origin_region="CA",
+        allowed_destinations=frozenset({"US"}),
+        policy_id="test",
+    )
+    result = rule.evaluate("email", "transfer", {"origin_region": "RU", "destination_region": "US"})
+    assert result is None
+
+
 # --- PurposeRule ---
 def test_purpose_rule_allows_matching_purpose():
     rule = PurposeRule(required_purpose="data_transfer", policy_id="test")

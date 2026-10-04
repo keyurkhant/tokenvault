@@ -1,3 +1,11 @@
+"""
+FileKeyStore — plaintext JSON key file store.
+
+WARNING: Keys are stored in cleartext JSON. This backend requires external
+at-rest protection (filesystem permissions, secret manager, volume encryption).
+Encrypted-at-rest key storage is not yet implemented; it is planned for v0.2.
+Use EnvKeyStore for production deployments where keys come from a secret manager.
+"""
 from __future__ import annotations
 import json
 import os

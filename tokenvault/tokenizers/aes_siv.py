@@ -41,7 +41,7 @@ class AESSIVTokenizer:
             is_deterministic=True,
         )
 
-    def detokenize(self, token_result: TokenResult) -> str:
+    def _detokenize(self, token_result: TokenResult) -> str:
         key = self._key_store.get_key(token_result.key_version)
         ciphertext = base64.urlsafe_b64decode(token_result.token + "==")
         aes = AESSIV(key)

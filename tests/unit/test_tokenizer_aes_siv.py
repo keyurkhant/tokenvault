@@ -24,7 +24,7 @@ def test_aes_siv_roundtrip(store):
     t = AESSIVTokenizer(key_store=store)
     original = "jane@example.com"
     result = t.tokenize(original, "email")
-    recovered = t.detokenize(result)
+    recovered = t._detokenize(result)
     assert recovered == original
 
 

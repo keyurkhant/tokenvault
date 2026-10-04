@@ -40,19 +40,24 @@ class RegionRule:
     ) -> PolicyDecision | None:
         if operation != "transfer":
             return None
-        dest = context.get("destination_region")
-        if dest is None:
+        # Rule only applies when context origin matches (or origin_region is None = wildcard)
+        if self.origin_region is not None:
+            ctx_origin = context.get("origin_region")
+            if ctx_origin is not None and ctx_origin != self.origin_region:
+                return None  # Rule doesn't apply to this origin
+        destination = context.get("destination_region")
+        if destination is None:
             return None
-        if dest in self.allowed_destinations:
+        if destination in self.allowed_destinations:
             return PolicyDecision(
                 allowed=True,
                 policy_id=self.policy_id,
-                reason=f"Transfer to '{dest}' allowed from '{self.origin_region}'.",
+                reason=f"destination {destination!r} is allowed",
             )
         return PolicyDecision(
             allowed=False,
             policy_id=self.policy_id,
-            reason=f"Transfer to '{dest}' not allowed from '{self.origin_region}'.",
+            reason=f"destination {destination!r} not in allowed_destinations",
         )
 
 

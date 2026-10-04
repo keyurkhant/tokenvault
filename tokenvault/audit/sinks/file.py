@@ -19,7 +19,7 @@ class FileAuditSink:
             "key_version": event.key_version,
             "policy_id": event.policy_id,
             "outcome": event.outcome,
-            "metadata": event.metadata,
+            "metadata": dict(event.metadata),
         })
         with self._path.open("a") as fh:
             fh.write(record + "\n")

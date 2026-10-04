@@ -1,4 +1,5 @@
 from __future__ import annotations
+import types
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any, Protocol, runtime_checkable
@@ -17,7 +18,11 @@ class AuditEvent:
     timestamp: datetime = field(
         default_factory=lambda: datetime.now(tz=timezone.utc)
     )
-    metadata: dict[str, Any] = field(default_factory=dict)
+    metadata: types.MappingProxyType = field(default_factory=lambda: types.MappingProxyType({}))
+
+    def __post_init__(self) -> None:
+        if isinstance(self.metadata, dict):
+            object.__setattr__(self, "metadata", types.MappingProxyType(self.metadata))
 
 
 @runtime_checkable

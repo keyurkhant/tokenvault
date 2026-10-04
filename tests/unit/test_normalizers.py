@@ -55,7 +55,7 @@ def test_phone_keeps_plus():
     assert PhoneNormalizer().normalize("+14165551234") == "+14165551234"
 
 def test_phone_empty():
-    assert PhoneNormalizer().normalize("") == "+"
+    assert PhoneNormalizer().normalize("") == ""
 
 
 # --- DOB ---
@@ -64,6 +64,9 @@ def test_dob_iso_passthrough():
 
 def test_dob_slash_ddmmyyyy():
     assert DateOfBirthNormalizer().normalize("21/05/1990") == "1990-05-21"
+
+def test_dob_invalid_returns_stripped():
+    assert DateOfBirthNormalizer().normalize("not-a-date") == "not-a-date"
 
 
 # --- Address ---

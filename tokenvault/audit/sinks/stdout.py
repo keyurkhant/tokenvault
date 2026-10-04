@@ -15,5 +15,5 @@ class StdoutAuditSink:
             "key_version": event.key_version,
             "policy_id": event.policy_id,
             "outcome": event.outcome,
-            "metadata": event.metadata,
+            "metadata": dict(event.metadata),
         }))

@@ -4,6 +4,8 @@ from tokenvault.protocols.key_store import KeyEntropyError, MIN_KEY_BYTES
 
 class DirectKeyStore:
     def __init__(self, keys: dict[str, bytes], current_key_id: str) -> None:
+        if current_key_id not in keys:
+            raise ValueError(f"current_key_id {current_key_id!r} not found in keys")
         for kid, key in keys.items():
             if len(key) < MIN_KEY_BYTES:
                 raise KeyEntropyError(

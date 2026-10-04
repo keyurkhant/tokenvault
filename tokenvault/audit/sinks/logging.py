@@ -10,7 +10,7 @@ class PythonLoggingAuditSink:
     def emit(self, event: AuditEvent) -> None:
         _logger.info(
             "event_id=%s operation=%s field_type=%s algorithm=%s "
-            "key_version=%s policy_id=%s outcome=%s timestamp=%s",
+            "key_version=%s policy_id=%s outcome=%s timestamp=%s metadata=%s",
             event.event_id,
             event.operation,
             event.field_type,
@@ -19,4 +19,5 @@ class PythonLoggingAuditSink:
             event.policy_id,
             event.outcome,
             event.timestamp.isoformat(),
+            event.metadata,
         )
