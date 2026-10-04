@@ -25,7 +25,7 @@ class TokenVault:
         field: PIIField,
         context: dict[str, Any] | None = None,
     ) -> TokenResult:
-        ctx = {"purpose": "data_transfer", **(context or {})}
+        ctx = context if context is not None else {"purpose": "data_transfer"}
         self._check_policy(field.field_type.value, "tokenize", ctx)
         result = self._config.tokenizer.tokenize(field.value, field.field_type.value)
         self._emit("tokenize", field.field_type.value, result.algorithm, result.key_version, "success", ctx)
@@ -45,7 +45,7 @@ class TokenVault:
         algorithm: str = "exact",
         context: dict[str, Any] | None = None,
     ) -> MatchResult:
-        ctx = {"purpose": "data_transfer", **(context or {})}
+        ctx = context if context is not None else {"purpose": "data_transfer"}
         self._check_policy(token_a.field_type, "match", ctx)
         matcher = self._config.matchers.get(algorithm, self._fallback_matcher)
         result = matcher.match(token_a.token, token_b.token)
