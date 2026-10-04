@@ -38,4 +38,4 @@ class VaultConfig:
     audit_sink: AuditSink | None = None
     consent_reference: str = ""
     region: str = "CA"
-    normalizers: dict = field(default_factory=_default_normalizers)
+    normalizers: dict[FieldType, Normalizer] = field(default_factory=_default_normalizers)

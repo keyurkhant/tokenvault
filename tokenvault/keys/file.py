@@ -39,6 +39,10 @@ class FileKeyStore:
                     f"Key '{kid}' in file is {len(key)} bytes; minimum is {MIN_KEY_BYTES}."
                 )
             self._keys[kid] = key
+        if self._current not in self._keys:
+            raise ValueError(
+                f"current_key_id {self._current!r} not found in loaded keys."
+            )
 
     def get_key(self, key_id: str) -> bytes:
         try:

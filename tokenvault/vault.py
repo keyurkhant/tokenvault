@@ -113,6 +113,11 @@ class TokenVault:
         )
         decision = self._check_policy(field, "detokenize", ctx)
         if not decision.allowed:
+            self._emit(
+                field, token_result, "detokenize", ctx,
+                outcome="denied",
+                extra={"reason": decision.reason, "policy_id": decision.policy_id},
+            )
             raise PolicyDeniedError(f"detokenize denied by policy: {decision.reason}")
         if not hasattr(self._config.tokenizer, "_detokenize"):
             raise UnsupportedOperationError("tokenizer does not support detokenization")

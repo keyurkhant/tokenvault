@@ -89,6 +89,37 @@ def test_tokenize_record(vault):
     assert set(results.keys()) == {"email", "name"}
 
 
+def test_detokenize_aes_siv_policy_gated():
+    from tokenvault.tokenizers.aes_siv import AESSIVTokenizer
+    from tokenvault.vault import UnsupportedOperationError
+
+    key = secrets.token_bytes(64)
+    store = DirectKeyStore(keys={"v1": key}, current_key_id="v1")
+    tokenizer = AESSIVTokenizer(key_store=store)
+    capture = _CaptureSink()
+    tv = TokenVault(VaultConfig(key_store=store, tokenizer=tokenizer, audit_sink=capture))
+    field = PIIField("email", FieldType.EMAIL, "jane@example.com")
+    result = tv.tokenize(field)
+    raw = tv.detokenize(result)
+    assert raw == "jane@example.com"
+    detokenize_events = [e for e in capture.events if e.operation == "detokenize"]
+    assert len(detokenize_events) == 1
+    assert detokenize_events[0].outcome == "success"
+
+
+def test_detokenize_hmac_raises_unsupported():
+    from tokenvault.vault import UnsupportedOperationError
+
+    key = secrets.token_bytes(32)
+    store = DirectKeyStore(keys={"v1": key}, current_key_id="v1")
+    tokenizer = HMACTokenizer(key_store=store)
+    tv = TokenVault(VaultConfig(key_store=store, tokenizer=tokenizer))
+    field = PIIField("email", FieldType.EMAIL, "jane@example.com")
+    result = tv.tokenize(field)
+    with pytest.raises(UnsupportedOperationError):
+        tv.detokenize(result)
+
+
 def test_policy_denied_emits_audit_event():
     from tokenvault.policy.engine import PolicyEngine, RuleSet
     from tokenvault.policy.rules import FieldRule

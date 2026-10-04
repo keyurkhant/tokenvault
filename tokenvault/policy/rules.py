@@ -40,11 +40,9 @@ class RegionRule:
     ) -> PolicyDecision | None:
         if operation != "transfer":
             return None
-        # Rule only applies when context origin matches (or origin_region is None = wildcard)
-        if self.origin_region is not None:
-            ctx_origin = context.get("origin_region")
-            if ctx_origin is not None and ctx_origin != self.origin_region:
-                return None  # Rule doesn't apply to this origin
+        ctx_origin = context.get("origin_region")
+        if ctx_origin is not None and ctx_origin != self.origin_region:
+            return None
         destination = context.get("destination_region")
         if destination is None:
             return None
