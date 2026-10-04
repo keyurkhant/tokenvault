@@ -7,14 +7,7 @@ A Python library for privacy-preserving tokenization and matching of personally 
 ### High Level Design
 > Open [`docs/diagrams/hld.excalidraw`](docs/diagrams/hld.excalidraw) in [Excalidraw](https://excalidraw.com) to view or edit. Replace the placeholder below with a screenshot after opening.
 
-<!-- HLD_SCREENSHOT_PLACEHOLDER -->
-<!--
-  To add the screenshot:
-  1. Open docs/diagrams/hld.excalidraw at https://excalidraw.com (drag & drop)
-  2. Export as PNG  (Menu → Export image → PNG)
-  3. Save to docs/diagrams/hld.png
-  4. Replace this comment block with: ![High Level Architecture](docs/diagrams/hld.png)
--->
+![High Level Architecture](docs/diagrams/hld.png)
 
 The system is structured in four layers:
 - **Entry Points** — CLI (`tokenvault tokenize / audit`) and Python library API
