@@ -16,7 +16,8 @@ argon2   = ["argon2-cffi>=23.1"]
 aes-siv  = ["cryptography>=42.0"]
 fuzzy    = ["jellyfish>=1.1"]
 phone    = ["phonenumbers>=8.13"]
-all      = ["tokenvault[argon2,aes-siv,fuzzy,phone]"]
+cli      = ["tomli>=2.0; python_version < '3.11'"]
+all      = ["tokenvault[argon2,aes-siv,fuzzy,phone,cli]"]
 dev      = [
     "pytest>=8.0",
     "hypothesis>=6.100",
