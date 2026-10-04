@@ -2,6 +2,45 @@
 
 A Python library for privacy-preserving tokenization and matching of personally identifiable information (PII), with first-class support for cross-border data transfer scenarios and PIPEDA compliance.
 
+## Architecture
+
+### High Level Design
+> Open [`docs/diagrams/hld.excalidraw`](docs/diagrams/hld.excalidraw) in [Excalidraw](https://excalidraw.com) to view or edit. Replace the placeholder below with a screenshot after opening.
+
+<!-- HLD_SCREENSHOT_PLACEHOLDER -->
+<!--
+  To add the screenshot:
+  1. Open docs/diagrams/hld.excalidraw at https://excalidraw.com (drag & drop)
+  2. Export as PNG  (Menu → Export image → PNG)
+  3. Save to docs/diagrams/hld.png
+  4. Replace this comment block with: ![High Level Architecture](docs/diagrams/hld.png)
+-->
+
+The system is structured in four layers:
+- **Entry Points** — CLI (`tokenvault tokenize / audit`) and Python library API
+- **Core Facade** — `TokenVault` orchestrates normalization → policy check → tokenization → audit; `VaultConfig` wires all components
+- **Domain Modules** — Fields & Normalizers · Key Management · Tokenizers · Matcher Engine · Policy Engine · Audit System · Transfer Layer
+- **Protocols** — `typing.Protocol` ABCs (`KeyStore`, `Tokenizer`, `Normalizer`, `Matcher`, `AuditSink`, `PolicyGuard`) decouple every domain from the others
+
+### Low Level Design
+> Open [`docs/diagrams/lld.excalidraw`](docs/diagrams/lld.excalidraw) in [Excalidraw](https://excalidraw.com) to view or edit. Replace the placeholder below with a screenshot after opening.
+
+<!-- LLD_SCREENSHOT_PLACEHOLDER -->
+<!--
+  To add the screenshot:
+  1. Open docs/diagrams/lld.excalidraw at https://excalidraw.com (drag & drop)
+  2. Export as PNG  (Menu → Export image → PNG)
+  3. Save to docs/diagrams/lld.png
+  4. Replace this comment block with: ![Low Level Design](docs/diagrams/lld.png)
+-->
+
+The LLD covers:
+- **Protocol Layer** — all six `typing.Protocol` interfaces with method signatures
+- **Value Types** — `TokenResult`, `MatchResult`, `AuditEvent` (auto UUID + UTC timestamp, `MappingProxyType` metadata), `PolicyDecision` — all frozen dataclasses
+- **Concrete Implementations** — full implementation list per domain with algorithm notes
+- **`vault.tokenize()` call flow** — Receive → Policy Check → Normalize → Tokenize → Emit Audit → Return
+- **Security invariants** — `hmac.compare_digest`, `secrets`-only randomness, 256-bit key floor, no PII in logs
+
 ## Features
 
 - **Deterministic tokenization** via HMAC-SHA256 — same input always produces the same token
@@ -411,6 +450,16 @@ The following symbols are exported from `tokenvault` directly:
 2. Run the test suite: `pytest --tb=short -q`
 3. All tests must pass with zero warnings.
 4. No real PII may be committed to the repository. Use programmatically generated synthetic data in tests.
+
+## Documentation
+
+| Document | Description |
+|---|---|
+| [`docs/SPEC.md`](docs/SPEC.md) | Product and engineering specification — purpose, requirements, acceptance criteria |
+| [`docs/superpowers/specs/2026-10-04-tokenvault-architecture-design.md`](docs/superpowers/specs/2026-10-04-tokenvault-architecture-design.md) | Architecture design — package structure, protocol definitions, algorithm choices |
+| [`docs/superpowers/plans/2026-10-04-tokenvault-implementation.md`](docs/superpowers/plans/2026-10-04-tokenvault-implementation.md) | TDD implementation plan |
+| [`docs/diagrams/hld.excalidraw`](docs/diagrams/hld.excalidraw) | High Level Architecture diagram (Excalidraw) |
+| [`docs/diagrams/lld.excalidraw`](docs/diagrams/lld.excalidraw) | Low Level Design diagram (Excalidraw) |
 
 ## License
 
