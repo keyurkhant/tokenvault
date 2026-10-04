@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import json
 
 from tokenvault.protocols.audit_sink import AuditEvent

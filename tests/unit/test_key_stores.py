@@ -2,13 +2,13 @@ import json
 import os
 import secrets
 import tempfile
+
 import pytest
 
-from tokenvault.protocols.key_store import KeyEntropyError, MIN_KEY_BYTES
 from tokenvault.keys.direct import DirectKeyStore
 from tokenvault.keys.env import EnvKeyStore
 from tokenvault.keys.file import FileKeyStore
-
+from tokenvault.protocols.key_store import KeyEntropyError
 
 KEY = secrets.token_bytes(32)
 

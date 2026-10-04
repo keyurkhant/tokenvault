@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import hmac as _hmac
 
 from tokenvault.protocols.matcher import MatchResult

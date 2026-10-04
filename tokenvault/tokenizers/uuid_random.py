@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import secrets
 import uuid as _uuid
 

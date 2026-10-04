@@ -1,14 +1,13 @@
 import json
 import logging
-import tempfile
 import os
-import pytest
+import tempfile
 
-from tokenvault.protocols.audit_sink import AuditEvent
 from tokenvault.audit.redactor import Redactor, redact
+from tokenvault.audit.sinks.file import FileAuditSink
 from tokenvault.audit.sinks.logging import PythonLoggingAuditSink
 from tokenvault.audit.sinks.stdout import StdoutAuditSink
-from tokenvault.audit.sinks.file import FileAuditSink
+from tokenvault.protocols.audit_sink import AuditEvent
 
 
 def _make_event(**kwargs) -> AuditEvent:

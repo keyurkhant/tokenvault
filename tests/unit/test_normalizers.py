@@ -1,13 +1,13 @@
-import pytest
-from hypothesis import given, strategies as st
+from hypothesis import given
+from hypothesis import strategies as st
 
+from tokenvault.fields.address import AddressNormalizer
+from tokenvault.fields.custom import PassthroughNormalizer
+from tokenvault.fields.dob import DateOfBirthNormalizer
 from tokenvault.fields.email import EmailNormalizer
 from tokenvault.fields.name import NameNormalizer
-from tokenvault.fields.phone import PhoneNormalizer
-from tokenvault.fields.dob import DateOfBirthNormalizer
-from tokenvault.fields.address import AddressNormalizer
 from tokenvault.fields.national_id import NationalIDNormalizer
-from tokenvault.fields.custom import PassthroughNormalizer
+from tokenvault.fields.phone import PhoneNormalizer
 
 
 # --- Email ---

@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-import pytest
-from tokenvault.protocols.policy_guard import PolicyDecision
-from tokenvault.policy.rules import FieldRule, RegionRule, PurposeRule
 from tokenvault.policy.engine import PolicyEngine, RuleSet
+from tokenvault.policy.rules import FieldRule, PurposeRule, RegionRule
 
 
 # --- FieldRule ---

@@ -4,6 +4,7 @@ import os
 import secrets
 import sys
 import tempfile
+
 import pytest
 
 from tokenvault.cli.commands import main

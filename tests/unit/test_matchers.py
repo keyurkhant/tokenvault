@@ -1,4 +1,5 @@
 import pytest
+
 from tokenvault.matchers.exact import ExactTokenMatcher
 from tokenvault.matchers.ngram import NgramSimilarityMatcher
 

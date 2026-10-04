@@ -1,5 +1,6 @@
 from __future__ import annotations
-from tokenvault.protocols.key_store import KeyEntropyError, MIN_KEY_BYTES
+
+from tokenvault.protocols.key_store import MIN_KEY_BYTES, KeyEntropyError
 
 
 class DirectKeyStore:

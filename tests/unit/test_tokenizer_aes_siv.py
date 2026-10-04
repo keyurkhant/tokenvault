@@ -1,10 +1,11 @@
 import secrets
+
 import pytest
 
 cryptography = pytest.importorskip("cryptography")
 
-from tokenvault.keys.direct import DirectKeyStore
-from tokenvault.tokenizers.aes_siv import AESSIVTokenizer
+from tokenvault.keys.direct import DirectKeyStore  # noqa: E402
+from tokenvault.tokenizers.aes_siv import AESSIVTokenizer  # noqa: E402
 
 
 @pytest.fixture()

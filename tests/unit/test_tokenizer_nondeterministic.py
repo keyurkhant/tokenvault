@@ -1,4 +1,5 @@
 import pytest
+
 from tokenvault.tokenizers.uuid_random import UUIDRandomTokenizer
 
 

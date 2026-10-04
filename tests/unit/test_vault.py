@@ -1,13 +1,14 @@
 import secrets
+
 import pytest
 
+from tokenvault.config import VaultConfig
 from tokenvault.fields.base import FieldType, PIIField
 from tokenvault.keys.direct import DirectKeyStore
-from tokenvault.tokenizers.hmac_sha256 import HMACTokenizer
 from tokenvault.matchers.exact import ExactTokenMatcher
-from tokenvault.config import VaultConfig
-from tokenvault.vault import TokenVault, PolicyDeniedError
 from tokenvault.protocols.audit_sink import AuditEvent
+from tokenvault.tokenizers.hmac_sha256 import HMACTokenizer
+from tokenvault.vault import PolicyDeniedError, TokenVault
 
 
 class _CaptureSink:
@@ -91,7 +92,6 @@ def test_tokenize_record(vault):
 
 def test_detokenize_aes_siv_policy_gated():
     from tokenvault.tokenizers.aes_siv import AESSIVTokenizer
-    from tokenvault.vault import UnsupportedOperationError
 
     key = secrets.token_bytes(64)
     store = DirectKeyStore(keys={"v1": key}, current_key_id="v1")

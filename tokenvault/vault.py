@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from typing import Any
 
 from tokenvault.audit.sinks.logging import PythonLoggingAuditSink
@@ -121,7 +122,7 @@ class TokenVault:
             raise PolicyDeniedError(f"detokenize denied by policy: {decision.reason}")
         if not hasattr(self._config.tokenizer, "_detokenize"):
             raise UnsupportedOperationError("tokenizer does not support detokenization")
-        raw = self._config.tokenizer._detokenize(token_result)
+        raw: str = self._config.tokenizer._detokenize(token_result)
         self._emit(field, token_result, "detokenize", ctx)
         return raw
 
@@ -153,5 +154,5 @@ class TokenVault:
             key_version=result.key_version,
             policy_id=str(context.get("policy_id", "default")),
             outcome=outcome,
-            metadata=dict(extra or {}),
+            metadata=dict(extra or {}),  # type: ignore[arg-type]
         ))

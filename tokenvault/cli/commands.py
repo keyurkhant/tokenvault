@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import argparse
 import csv
 import json
@@ -8,10 +9,10 @@ from pathlib import Path
 
 def cmd_tokenize(args: argparse.Namespace) -> None:
     try:
-        import tomllib  # stdlib 3.11+
+        import tomllib  # type: ignore[import-not-found]  # stdlib 3.11+
     except ImportError:
         try:
-            import tomli as tomllib  # type: ignore[no-redef]  # backport for 3.10
+            import tomli as tomllib  # type: ignore[import-not-found]  # backport 3.10
         except ImportError:
             print(
                 "Error: TOML config requires 'tomli' on Python < 3.11. "
@@ -19,10 +20,10 @@ def cmd_tokenize(args: argparse.Namespace) -> None:
                 file=sys.stderr,
             )
             sys.exit(1)
+    from tokenvault.config import VaultConfig
     from tokenvault.fields.base import FieldType, PIIField
     from tokenvault.keys.env import EnvKeyStore
     from tokenvault.tokenizers.hmac_sha256 import HMACTokenizer
-    from tokenvault.config import VaultConfig
     from tokenvault.vault import TokenVault
 
     with open(args.config, "rb") as fh:

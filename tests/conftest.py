@@ -1,4 +1,5 @@
 import secrets
+
 import pytest
 
 
@@ -21,10 +22,10 @@ def hmac_tokenizer(test_key_store):
 
 @pytest.fixture()
 def vault(test_key_store, hmac_tokenizer):
-    from tokenvault.config import VaultConfig
-    from tokenvault.vault import TokenVault
-    from tokenvault.matchers.exact import ExactTokenMatcher
     from tokenvault.audit.sinks.logging import PythonLoggingAuditSink
+    from tokenvault.config import VaultConfig
+    from tokenvault.matchers.exact import ExactTokenMatcher
+    from tokenvault.vault import TokenVault
     return TokenVault(
         VaultConfig(
             key_store=test_key_store,

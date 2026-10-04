@@ -1,5 +1,7 @@
 import secrets
+
 import pytest
+
 from tokenvault.keys.direct import DirectKeyStore
 from tokenvault.tokenizers.hmac_sha256 import HMACTokenizer
 

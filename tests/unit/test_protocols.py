@@ -1,9 +1,10 @@
 from dataclasses import fields
-from tokenvault.protocols.tokenizer import TokenResult
-from tokenvault.protocols.matcher import MatchResult
+
 from tokenvault.protocols.audit_sink import AuditEvent
+from tokenvault.protocols.key_store import MIN_KEY_BYTES
+from tokenvault.protocols.matcher import MatchResult
 from tokenvault.protocols.policy_guard import PolicyDecision
-from tokenvault.protocols.key_store import KeyEntropyError, MIN_KEY_BYTES
+from tokenvault.protocols.tokenizer import TokenResult
 
 
 def test_token_result_is_frozen():

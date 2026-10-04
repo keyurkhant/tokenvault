@@ -1,6 +1,8 @@
 from __future__ import annotations
+
 import os
-from tokenvault.protocols.key_store import KeyEntropyError, MIN_KEY_BYTES
+
+from tokenvault.protocols.key_store import MIN_KEY_BYTES, KeyEntropyError
 
 
 class EnvKeyStore:
@@ -17,9 +19,12 @@ class EnvKeyStore:
         raw = os.environ.get(env_name)
         if raw is None:
             raise KeyError(f"Environment variable '{env_name}' not set.")
-        key = bytes.fromhex(raw) if all(c in "0123456789abcdefABCDEF" for c in raw) else raw.encode()
+        is_hex = all(c in "0123456789abcdefABCDEF" for c in raw)
+        key = bytes.fromhex(raw) if is_hex else raw.encode()
         if len(key) < MIN_KEY_BYTES:
-            raise KeyEntropyError(f"Key from '{env_name}' is {len(key)} bytes; minimum is {MIN_KEY_BYTES}.")
+            raise KeyEntropyError(
+                f"Key from '{env_name}' is {len(key)} bytes; minimum is {MIN_KEY_BYTES}."
+            )
         return key
 
     def get_current_key_id(self) -> str:

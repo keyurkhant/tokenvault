@@ -1,22 +1,22 @@
 import secrets
+
 import pytest
 
+from tokenvault.config import VaultConfig
 from tokenvault.fields.base import FieldType, PIIField
 from tokenvault.fields.email import EmailNormalizer
 from tokenvault.fields.name import NameNormalizer
 from tokenvault.keys.direct import DirectKeyStore
-from tokenvault.tokenizers.hmac_sha256 import HMACTokenizer
+from tokenvault.matchers.composite import CompositeMatcher, WeightedMatcher
 from tokenvault.matchers.exact import ExactTokenMatcher
 from tokenvault.matchers.ngram import NgramSimilarityMatcher
-from tokenvault.matchers.composite import CompositeMatcher, WeightedMatcher
 from tokenvault.policy.engine import PolicyEngine, RuleSet
 from tokenvault.policy.pipeda import PIPEDA_DEFAULT_RULESET
-from tokenvault.audit.sinks.stdout import StdoutAuditSink
-from tokenvault.transfer.payload import TransferPayload
-from tokenvault.transfer.manifest import FieldMapping, TransferManifest
-from tokenvault.config import VaultConfig
-from tokenvault.vault import TokenVault, PolicyDeniedError
 from tokenvault.protocols.audit_sink import AuditEvent
+from tokenvault.tokenizers.hmac_sha256 import HMACTokenizer
+from tokenvault.transfer.manifest import FieldMapping, TransferManifest
+from tokenvault.transfer.payload import TransferPayload
+from tokenvault.vault import PolicyDeniedError, TokenVault
 
 
 class _CaptureSink:

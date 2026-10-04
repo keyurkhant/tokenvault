@@ -1,8 +1,9 @@
 from __future__ import annotations
+
 from dataclasses import dataclass, field
 
-from tokenvault.fields.base import FieldType
 from tokenvault.fields.address import AddressNormalizer
+from tokenvault.fields.base import FieldType
 from tokenvault.fields.custom import PassthroughNormalizer
 from tokenvault.fields.dob import DateOfBirthNormalizer
 from tokenvault.fields.email import EmailNormalizer
@@ -17,7 +18,7 @@ from tokenvault.protocols.policy_guard import PolicyGuard
 from tokenvault.protocols.tokenizer import Tokenizer
 
 
-def _default_normalizers() -> dict:
+def _default_normalizers() -> dict[FieldType, Normalizer]:
     return {
         FieldType.EMAIL: EmailNormalizer(),
         FieldType.NAME: NameNormalizer(),
