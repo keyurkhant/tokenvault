@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 from tokenvault.audit.sinks.logging import PythonLoggingAuditSink
@@ -25,6 +26,12 @@ class TokenVault:
         self._config = config
         self._sink = config.audit_sink or PythonLoggingAuditSink()
         self._fallback_matcher = ExactTokenMatcher()
+
+    @classmethod
+    def from_config(cls, path: str | Path) -> TokenVault:
+        """Construct a :class:`TokenVault` from a TOML config file."""
+        from tokenvault.config_loader import load_vault_config
+        return cls(load_vault_config(path))
 
     @property
     def config(self) -> VaultConfig:
