@@ -81,3 +81,8 @@ strict         = true
 # but flagged as unused on the other — disable that specific check here.
 module = "tokenvault.cli.commands"
 warn_unused_ignores = false
+
+[[tool.mypy.overrides]]
+# Same tomllib/tomli version-conditional import pattern as cli.commands.
+module = "tokenvault.config_loader"
+warn_unused_ignores = false
