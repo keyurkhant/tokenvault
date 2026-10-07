@@ -8,9 +8,28 @@ from tokenvault.config import VaultConfig
 from tokenvault.fields.base import FieldType, PIIField
 from tokenvault.matchers.exact import ExactTokenMatcher
 from tokenvault.protocols.audit_sink import AuditEvent
+from tokenvault.protocols.key_store import KeyStore
 from tokenvault.protocols.matcher import MatchResult
 from tokenvault.protocols.policy_guard import PolicyDecision
 from tokenvault.protocols.tokenizer import TokenResult
+
+
+class _FixedKeyStore:
+    """Wraps a KeyStore but always reports a specific key_id as current.
+
+    Used internally to re-tokenize under a target key without mutating the
+    shared tokenizer or key store.
+    """
+
+    def __init__(self, delegate: KeyStore, key_id: str) -> None:
+        self._delegate = delegate
+        self._key_id = key_id
+
+    def get_key(self, key_id: str) -> bytes:
+        return self._delegate.get_key(key_id)
+
+    def get_current_key_id(self) -> str:
+        return self._key_id
 
 
 class PolicyDeniedError(Exception):
@@ -133,6 +152,81 @@ class TokenVault:
         self._emit(field, token_result, "detokenize", ctx)
         return raw
 
+    def rotate_batch(
+        self,
+        records: list[TokenResult],
+        new_key_id: str,
+        context: dict[str, Any] | None = None,
+    ) -> list[TokenResult]:
+        """Re-tokenize *records* under *new_key_id*.
+
+        Requires a reversible tokenizer (AES-SIV). Each record is decrypted
+        with its stored key version, then re-encrypted under *new_key_id*.
+        Emits one ``key_rotation`` audit event per record.
+
+        Use :meth:`retoken` for HMAC-SHA256 when you have the original
+        :class:`~tokenvault.fields.base.PIIField`.
+        """
+        tok = self._config.tokenizer
+        if not hasattr(tok, "_detokenize"):
+            raise UnsupportedOperationError(
+                "rotate_batch requires a reversible tokenizer (e.g. aes-siv); "
+                "use retoken() for HMAC-SHA256 when you have the original PIIField"
+            )
+        ctx = context if context is not None else {"purpose": "key_rotation"}
+        # Validate new_key_id is accessible before touching any record
+        self._config.key_store.get_key(new_key_id)
+        fixed = _FixedKeyStore(self._config.key_store, new_key_id)
+        new_tok = tok.__class__(key_store=fixed)  # type: ignore[call-arg]
+        results: list[TokenResult] = []
+        for old in records:
+            raw: str = tok._detokenize(old)
+            new = new_tok.tokenize(raw, old.field_type)
+            self._emit_rotation(old, new, ctx)
+            results.append(new)
+        return results
+
+    def retoken(
+        self,
+        field: PIIField,
+        old_key_id: str,
+        new_key_id: str,
+        context: dict[str, Any] | None = None,
+    ) -> TokenResult:
+        """Re-tokenize *field* from *old_key_id* to *new_key_id*.
+
+        Intended for HMAC-SHA256 (and any key-store-based tokenizer) where
+        decryption of the existing token is not possible. The caller must
+        supply the original :class:`~tokenvault.fields.base.PIIField`.
+        Normalization is applied before tokenization. Emits one
+        ``key_rotation`` audit event.
+        """
+        tok = self._config.tokenizer
+        if not hasattr(tok, "_key_store"):
+            raise UnsupportedOperationError(
+                "retoken requires a key-store-based tokenizer (hmac-sha256 or aes-siv)"
+            )
+        ctx = context if context is not None else {"purpose": "key_rotation"}
+        normalizer = self._config.normalizers.get(field.field_type)
+        if normalizer is not None:
+            field = PIIField(
+                name=field.name,
+                field_type=field.field_type,
+                value=normalizer.normalize(field.value),
+            )
+        fixed = _FixedKeyStore(self._config.key_store, new_key_id)
+        new_tok = tok.__class__(key_store=fixed)  # type: ignore[call-arg]
+        old_sentinel = TokenResult(
+            token="[rotated]",
+            field_type=field.field_type.value,
+            algorithm=tok.algorithm,  # type: ignore[attr-defined]
+            key_version=old_key_id,
+            is_deterministic=True,
+        )
+        new = new_tok.tokenize(field.value, field.field_type.value)
+        self._emit_rotation(old_sentinel, new, ctx)
+        return new
+
     def _check_policy(
         self, field: PIIField, operation: str, context: dict[str, Any]
     ) -> PolicyDecision:
@@ -162,4 +256,20 @@ class TokenVault:
             policy_id=str(context.get("policy_id", "default")),
             outcome=outcome,
             metadata=dict(extra or {}),  # type: ignore[arg-type]
+        ))
+
+    def _emit_rotation(
+        self,
+        old: TokenResult,
+        new: TokenResult,
+        context: dict[str, Any],
+    ) -> None:
+        self._sink.emit(AuditEvent(
+            operation="key_rotation",
+            field_type=old.field_type,
+            algorithm=new.algorithm,
+            key_version=new.key_version,
+            policy_id=str(context.get("policy_id", "default")),
+            outcome="success",
+            metadata={"old_key_version": old.key_version},  # type: ignore[arg-type]
         ))

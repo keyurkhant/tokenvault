@@ -8,7 +8,7 @@ from tokenvault.keys.direct import DirectKeyStore
 from tokenvault.matchers.exact import ExactTokenMatcher
 from tokenvault.protocols.audit_sink import AuditEvent
 from tokenvault.tokenizers.hmac_sha256 import HMACTokenizer
-from tokenvault.vault import PolicyDeniedError, TokenVault
+from tokenvault.vault import PolicyDeniedError, TokenVault, UnsupportedOperationError
 
 
 class _CaptureSink:
@@ -118,6 +118,167 @@ def test_detokenize_hmac_raises_unsupported():
     result = tv.tokenize(field)
     with pytest.raises(UnsupportedOperationError):
         tv.detokenize(result)
+
+
+# ---------------------------------------------------------------------------
+# rotate_batch
+# ---------------------------------------------------------------------------
+
+def _aes_siv_vault(capture: _CaptureSink) -> tuple[TokenVault, DirectKeyStore]:
+    pytest.importorskip("cryptography")
+    from tokenvault.tokenizers.aes_siv import AESSIVTokenizer
+
+    k1 = secrets.token_bytes(64)  # AES-SIV needs 64 bytes
+    k2 = secrets.token_bytes(64)
+    store = DirectKeyStore(keys={"v1": k1, "v2": k2}, current_key_id="v1")
+    tokenizer = AESSIVTokenizer(key_store=store)
+    vault = TokenVault(VaultConfig(key_store=store, tokenizer=tokenizer, audit_sink=capture))
+    return vault, store
+
+
+def test_rotate_batch_returns_new_tokens(capture):
+    tv, _ = _aes_siv_vault(capture)
+    field = PIIField("email", FieldType.EMAIL, "jane@example.com")
+    old = tv.tokenize(field)
+    new_results = tv.rotate_batch([old], new_key_id="v2")
+    assert len(new_results) == 1
+    assert new_results[0].key_version == "v2"
+    assert new_results[0].token != old.token
+
+
+def test_rotate_batch_tokens_decrypt_correctly(capture):
+    tv, _ = _aes_siv_vault(capture)
+    field = PIIField("email", FieldType.EMAIL, "jane@example.com")
+    old = tv.tokenize(field)
+    new_results = tv.rotate_batch([old], new_key_id="v2")
+    recovered = tv.detokenize(new_results[0])
+    # detokenize returns the value that was re-tokenized (normalised email)
+    assert recovered == "jane@example.com"
+
+
+def test_rotate_batch_emits_key_rotation_audit_events(capture):
+    tv, _ = _aes_siv_vault(capture)
+    fields = [
+        PIIField("email", FieldType.EMAIL, "a@example.com"),
+        PIIField("email", FieldType.EMAIL, "b@example.com"),
+    ]
+    old_results = [tv.tokenize(f) for f in fields]
+    capture.events.clear()
+    tv.rotate_batch(old_results, new_key_id="v2")
+    rotation_events = [e for e in capture.events if e.operation == "key_rotation"]
+    assert len(rotation_events) == 2
+    for ev in rotation_events:
+        assert ev.outcome == "success"
+        assert ev.key_version == "v2"
+        assert ev.metadata["old_key_version"] == "v1"
+
+
+def test_rotate_batch_multiple_records(capture):
+    tv, _ = _aes_siv_vault(capture)
+    fields = [PIIField("email", FieldType.EMAIL, f"user{i}@example.com") for i in range(5)]
+    old_results = [tv.tokenize(f) for f in fields]
+    new_results = tv.rotate_batch(old_results, new_key_id="v2")
+    assert len(new_results) == 5
+    assert all(r.key_version == "v2" for r in new_results)
+    # All new tokens are distinct
+    assert len({r.token for r in new_results}) == 5
+
+
+def test_rotate_batch_invalid_new_key_raises(capture):
+    tv, _ = _aes_siv_vault(capture)
+    field = PIIField("email", FieldType.EMAIL, "jane@example.com")
+    old = tv.tokenize(field)
+    with pytest.raises(KeyError):
+        tv.rotate_batch([old], new_key_id="v99")
+
+
+def test_rotate_batch_hmac_raises_unsupported(capture):
+    key = secrets.token_bytes(32)
+    store = DirectKeyStore(keys={"v1": key}, current_key_id="v1")
+    tokenizer = HMACTokenizer(key_store=store)
+    tv = TokenVault(VaultConfig(key_store=store, tokenizer=tokenizer, audit_sink=capture))
+    field = PIIField("email", FieldType.EMAIL, "jane@example.com")
+    old = tv.tokenize(field)
+    with pytest.raises(UnsupportedOperationError, match="rotate_batch"):
+        tv.rotate_batch([old], new_key_id="v1")
+
+
+# ---------------------------------------------------------------------------
+# retoken
+# ---------------------------------------------------------------------------
+
+def test_retoken_hmac_returns_token_under_new_key(capture):
+    k1 = secrets.token_bytes(32)
+    k2 = secrets.token_bytes(32)
+    store = DirectKeyStore(keys={"v1": k1, "v2": k2}, current_key_id="v1")
+    tokenizer = HMACTokenizer(key_store=store)
+    tv = TokenVault(VaultConfig(key_store=store, tokenizer=tokenizer, audit_sink=capture))
+    field = PIIField("email", FieldType.EMAIL, "jane@example.com")
+    new = tv.retoken(field, old_key_id="v1", new_key_id="v2")
+    assert new.key_version == "v2"
+    assert new.algorithm == "hmac-sha256"
+    # Token must differ from v1 token since keys differ
+    old = tv.tokenize(field)  # uses v1 (current)
+    assert new.token != old.token
+
+
+def test_retoken_is_deterministic(capture):
+    k1 = secrets.token_bytes(32)
+    k2 = secrets.token_bytes(32)
+    store = DirectKeyStore(keys={"v1": k1, "v2": k2}, current_key_id="v1")
+    tokenizer = HMACTokenizer(key_store=store)
+    tv = TokenVault(VaultConfig(key_store=store, tokenizer=tokenizer, audit_sink=capture))
+    field = PIIField("email", FieldType.EMAIL, "jane@example.com")
+    r1 = tv.retoken(field, old_key_id="v1", new_key_id="v2")
+    r2 = tv.retoken(field, old_key_id="v1", new_key_id="v2")
+    assert r1.token == r2.token
+
+
+def test_retoken_applies_normalizer(capture):
+    k1 = secrets.token_bytes(32)
+    k2 = secrets.token_bytes(32)
+    store = DirectKeyStore(keys={"v1": k1, "v2": k2}, current_key_id="v2")
+    tokenizer = HMACTokenizer(key_store=store)
+    tv = TokenVault(VaultConfig(key_store=store, tokenizer=tokenizer, audit_sink=capture))
+    # Mixed-case and canonical form should produce same token under v2
+    r1 = tv.retoken(
+        PIIField("email", FieldType.EMAIL, "JANE@EXAMPLE.COM"),
+        old_key_id="v1", new_key_id="v2",
+    )
+    r2 = tv.retoken(
+        PIIField("email", FieldType.EMAIL, "jane@example.com"),
+        old_key_id="v1", new_key_id="v2",
+    )
+    assert r1.token == r2.token
+
+
+def test_retoken_emits_key_rotation_audit_event(capture):
+    k1 = secrets.token_bytes(32)
+    k2 = secrets.token_bytes(32)
+    store = DirectKeyStore(keys={"v1": k1, "v2": k2}, current_key_id="v1")
+    tokenizer = HMACTokenizer(key_store=store)
+    tv = TokenVault(VaultConfig(key_store=store, tokenizer=tokenizer, audit_sink=capture))
+    field = PIIField("email", FieldType.EMAIL, "jane@example.com")
+    capture.events.clear()
+    tv.retoken(field, old_key_id="v1", new_key_id="v2")
+    rotation_events = [e for e in capture.events if e.operation == "key_rotation"]
+    assert len(rotation_events) == 1
+    ev = rotation_events[0]
+    assert ev.key_version == "v2"
+    assert ev.metadata["old_key_version"] == "v1"
+    assert ev.outcome == "success"
+
+
+def test_retoken_uuid_raises_unsupported(capture):
+    from tokenvault.tokenizers.uuid_random import UUIDRandomTokenizer
+
+    key = secrets.token_bytes(32)
+    store = DirectKeyStore(keys={"v1": key}, current_key_id="v1")
+    tokenizer = UUIDRandomTokenizer()
+    tv = TokenVault(VaultConfig(key_store=store, tokenizer=tokenizer, audit_sink=capture))
+    field = PIIField("email", FieldType.EMAIL, "jane@example.com")
+    with pytest.raises(UnsupportedOperationError, match="retoken"):
+        tv.retoken(field, old_key_id="v1", new_key_id="v1")
 
 
 def test_policy_denied_emits_audit_event():
