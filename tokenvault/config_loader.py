@@ -69,7 +69,10 @@ def _build_key_store(section: dict[str, Any]) -> KeyStore:
         file_path = section.get("path")
         if file_path is None:
             raise ConfigError("[key_store] backend='file' requires a 'path' entry")
-        return FileKeyStore(path=str(file_path))
+        import warnings
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            return FileKeyStore(path=str(file_path))
     if backend == "direct":
         raise ConfigError(
             "[key_store] backend='direct' cannot be loaded from a file; "
