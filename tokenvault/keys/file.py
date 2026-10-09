@@ -70,6 +70,9 @@ class FileKeyStore:
     def get_current_key_id(self) -> str:
         return self._current
 
+    def list_key_ids(self) -> list[str]:
+        return sorted(self._keys.keys())
+
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Encrypted store
@@ -189,6 +192,9 @@ class EncryptedFileKeyStore:
 
     def get_current_key_id(self) -> str:
         return self._current
+
+    def list_key_ids(self) -> list[str]:
+        return sorted(self._keys.keys())
 
     @classmethod
     def create(
