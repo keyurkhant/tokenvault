@@ -26,3 +26,12 @@ class DirectKeyStore:
 
     def list_key_ids(self) -> list[str]:
         return sorted(self._keys.keys())
+
+    @classmethod
+    def from_rotation(
+        cls,
+        keys: dict[str, bytes],
+        current_key_id: str,
+    ) -> DirectKeyStore:
+        """Convenience factory that communicates key-rotation intent at the call site."""
+        return cls(keys=keys, current_key_id=current_key_id)

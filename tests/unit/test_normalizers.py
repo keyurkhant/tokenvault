@@ -57,6 +57,22 @@ def test_phone_keeps_plus():
 def test_phone_empty():
     assert PhoneNormalizer().normalize("") == ""
 
+@given(st.text(min_size=0, max_size=30))
+def test_phone_idempotent(s: str):
+    n = PhoneNormalizer()
+    once = n.normalize(s)
+    assert n.normalize(once) == once
+
+@given(st.text(min_size=0, max_size=30))
+def test_phone_empty_input_returns_empty(s: str):
+    if not s:
+        assert PhoneNormalizer().normalize(s) == ""
+
+@given(st.text(alphabet=st.characters(min_codepoint=0x80), min_size=1, max_size=20))
+def test_phone_non_ascii_does_not_raise(s: str):
+    result = PhoneNormalizer().normalize(s)
+    assert isinstance(result, str)
+
 
 # --- DOB ---
 def test_dob_iso_passthrough():
@@ -68,6 +84,17 @@ def test_dob_slash_ddmmyyyy():
 def test_dob_invalid_returns_stripped():
     assert DateOfBirthNormalizer().normalize("not-a-date") == "not-a-date"
 
+@given(st.text(min_size=0, max_size=30))
+def test_dob_idempotent(s: str):
+    n = DateOfBirthNormalizer()
+    once = n.normalize(s)
+    assert n.normalize(once) == once
+
+@given(st.text(alphabet=st.characters(min_codepoint=0x80), min_size=1, max_size=20))
+def test_dob_non_ascii_does_not_raise(s: str):
+    result = DateOfBirthNormalizer().normalize(s)
+    assert isinstance(result, str)
+
 
 # --- Address ---
 def test_address_lowercase():
@@ -76,6 +103,17 @@ def test_address_lowercase():
 def test_address_collapses_spaces():
     assert AddressNormalizer().normalize("123  Main   St") == "123 main st"
 
+@given(st.text(min_size=0, max_size=80))
+def test_address_idempotent(s: str):
+    n = AddressNormalizer()
+    once = n.normalize(s)
+    assert n.normalize(once) == once
+
+@given(st.text(alphabet=st.characters(min_codepoint=0x80), min_size=1, max_size=40))
+def test_address_non_ascii_does_not_raise(s: str):
+    result = AddressNormalizer().normalize(s)
+    assert isinstance(result, str)
+
 
 # --- National ID ---
 def test_national_id_strips_separators():
@@ -83,6 +121,17 @@ def test_national_id_strips_separators():
 
 def test_national_id_uppercase():
     assert NationalIDNormalizer().normalize("ab 12 cd") == "AB12CD"
+
+@given(st.text(min_size=0, max_size=30))
+def test_national_id_idempotent(s: str):
+    n = NationalIDNormalizer()
+    once = n.normalize(s)
+    assert n.normalize(once) == once
+
+@given(st.text(alphabet=st.characters(min_codepoint=0x80), min_size=1, max_size=20))
+def test_national_id_non_ascii_does_not_raise(s: str):
+    result = NationalIDNormalizer().normalize(s)
+    assert isinstance(result, str)
 
 
 # --- Passthrough ---
