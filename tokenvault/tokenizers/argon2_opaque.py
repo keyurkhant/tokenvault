@@ -4,7 +4,7 @@ import base64
 import hmac as _hmac
 import secrets
 
-from tokenvault.protocols.tokenizer import TokenResult
+from tokenvault.protocols.tokenizer import TokenizationError, TokenResult
 
 try:
     from argon2.low_level import Type, hash_secret_raw
@@ -36,38 +36,52 @@ class Argon2OpaqueTokenizer:
         return True
 
     def tokenize(self, value: str, field_type: str) -> TokenResult:
-        salt = secrets.token_bytes(_SALT_BYTES)
-        domain_input = f"{field_type}:{value}".encode()
-        raw = hash_secret_raw(
-            secret=domain_input,
-            salt=salt,
-            time_cost=self._time_cost,
-            memory_cost=self._memory_cost,
-            parallelism=self._parallelism,
-            hash_len=self._hash_len,
-            type=Type.ID,
-        )
-        token = base64.urlsafe_b64encode(salt + raw).rstrip(b"=").decode()
-        return TokenResult(
-            token=token,
-            field_type=field_type,
-            algorithm=self.algorithm,
-            key_version="none",
-            is_deterministic=False,
-        )
+        try:
+            salt = secrets.token_bytes(_SALT_BYTES)
+            domain_input = f"{field_type}:{value}".encode()
+            raw = hash_secret_raw(
+                secret=domain_input,
+                salt=salt,
+                time_cost=self._time_cost,
+                memory_cost=self._memory_cost,
+                parallelism=self._parallelism,
+                hash_len=self._hash_len,
+                type=Type.ID,
+            )
+            token = base64.urlsafe_b64encode(salt + raw).rstrip(b"=").decode()
+            return TokenResult(
+                token=token,
+                field_type=field_type,
+                algorithm=self.algorithm,
+                key_version="none",
+                is_deterministic=False,
+            )
+        except Exception:
+            raise TokenizationError(
+                "Argon2 tokenization failed",
+                field_type=field_type,
+                operation="tokenize",
+            ) from None
 
     def verify(self, value: str, token_result: TokenResult) -> bool:
-        combined = base64.urlsafe_b64decode(token_result.token + "==")
-        salt = combined[:_SALT_BYTES]
-        stored = combined[_SALT_BYTES:]
-        domain_input = f"{token_result.field_type}:{value}".encode()
-        candidate = hash_secret_raw(
-            secret=domain_input,
-            salt=salt,
-            time_cost=self._time_cost,
-            memory_cost=self._memory_cost,
-            parallelism=self._parallelism,
-            hash_len=len(stored),
-            type=Type.ID,
-        )
-        return _hmac.compare_digest(stored, candidate)
+        try:
+            combined = base64.urlsafe_b64decode(token_result.token + "==")
+            salt = combined[:_SALT_BYTES]
+            stored = combined[_SALT_BYTES:]
+            domain_input = f"{token_result.field_type}:{value}".encode()
+            candidate = hash_secret_raw(
+                secret=domain_input,
+                salt=salt,
+                time_cost=self._time_cost,
+                memory_cost=self._memory_cost,
+                parallelism=self._parallelism,
+                hash_len=len(stored),
+                type=Type.ID,
+            )
+            return _hmac.compare_digest(stored, candidate)
+        except Exception:
+            raise TokenizationError(
+                "Argon2 verification failed",
+                field_type=token_result.field_type,
+                operation="verify",
+            ) from None
