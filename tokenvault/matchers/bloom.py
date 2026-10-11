@@ -3,6 +3,8 @@ from __future__ import annotations
 import hashlib
 import hmac as _hmac
 
+from tokenvault.protocols.matcher import MatchResult
+
 
 def _popcount(data: bytes) -> int:
     return sum(bin(b).count("1") for b in data)
@@ -62,3 +64,51 @@ class BloomFilterEncoder:
                 pos = (h1 + i * h2) % self._filter_length
                 bits[pos >> 3] |= 1 << (pos & 7)
         return bytes(bits)
+
+
+class BloomFilterMatcher:
+    """Compares two Bloom filter bit vectors using the Dice coefficient.
+
+    Dice(A, B) = 2 * popcount(A AND B) / (popcount(A) + popcount(B))
+
+    Operates on raw bytes produced by BloomFilterEncoder; use match_encoded
+    as the primary interface. The match() adapter accepts base64url-encoded
+    vectors for compatibility with string-based pipeline callers.
+    """
+
+    algorithm = "bloom-dice"
+
+    def __init__(self, threshold: float = 0.75) -> None:
+        self._threshold = threshold
+
+    def match_encoded(self, bf_a: bytes, bf_b: bytes) -> MatchResult:
+        if len(bf_a) != len(bf_b):
+            raise ValueError(
+                f"Bloom filter vectors must be the same length "
+                f"({len(bf_a)} vs {len(bf_b)})."
+            )
+        a_count = _popcount(bf_a)
+        b_count = _popcount(bf_b)
+        if a_count + b_count == 0:
+            return MatchResult(
+                score=0.0,
+                algorithm=self.algorithm,
+                threshold=self._threshold,
+                matched=False,
+            )
+        intersection = _popcount(bytes(a & b for a, b in zip(bf_a, bf_b)))
+        score = 2.0 * intersection / (a_count + b_count)
+        return MatchResult(
+            score=score,
+            algorithm=self.algorithm,
+            threshold=self._threshold,
+            matched=score >= self._threshold,
+        )
+
+    def match(self, token_a: str, token_b: str) -> MatchResult:
+        """Match base64url-encoded BF vectors (no padding required)."""
+        import base64
+
+        bf_a = base64.urlsafe_b64decode(token_a + "==")
+        bf_b = base64.urlsafe_b64decode(token_b + "==")
+        return self.match_encoded(bf_a, bf_b)
