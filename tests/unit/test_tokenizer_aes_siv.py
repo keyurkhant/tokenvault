@@ -44,7 +44,7 @@ def test_aes_siv_is_deterministic_flag(store):
 
 
 def test_aes_siv_detokenize_wrong_key_raises_tokenization_error(store):
-    from tokenvault.protocols.tokenizer import TokenResult, TokenizationError
+    from tokenvault.protocols.tokenizer import TokenResult
 
     t = AESSIVTokenizer(key_store=store)
     r = t.tokenize("jane@example.com", "email")
@@ -59,7 +59,7 @@ def test_aes_siv_detokenize_wrong_key_raises_tokenization_error(store):
 
 
 def test_aes_siv_detokenize_corrupted_token_raises_tokenization_error():
-    from tokenvault.protocols.tokenizer import TokenResult, TokenizationError
+    from tokenvault.protocols.tokenizer import TokenizationError, TokenResult
 
     store2 = DirectKeyStore(keys={"v1": secrets.token_bytes(64)}, current_key_id="v1")
     t = AESSIVTokenizer(key_store=store2)
