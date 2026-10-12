@@ -93,8 +93,8 @@ def test_same_key_cross_party_scores_high():
 
 def test_different_key_cross_party_scores_low():
     # Different keys → same record → Dice is not meaningful (low overlap)
-    party_a = CLKEncoder(key=secrets.token_bytes(32), filter_length=512, num_hash_functions=20)
-    party_b = CLKEncoder(key=secrets.token_bytes(32), filter_length=512, num_hash_functions=20)
+    party_a = CLKEncoder(key=secrets.token_bytes(32), filter_length=2048, num_hash_functions=20)
+    party_b = CLKEncoder(key=secrets.token_bytes(32), filter_length=2048, num_hash_functions=20)
     matcher = BloomFilterMatcher(threshold=0.75)
 
     record = {"name": "john smith", "dob": "1985-03-15"}
