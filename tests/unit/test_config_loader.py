@@ -82,25 +82,19 @@ def test_key_store_env_custom_prefix(tmp_path: Path, monkeypatch: pytest.MonkeyP
     assert isinstance(config.key_store, EnvKeyStore)
 
 
-def test_key_store_file_backend(tmp_path: Path) -> None:
-    import json
-    key_hex = "c" * 64
-    key_file = tmp_path / "keys.json"
-    key_file.write_text(json.dumps({"current_key_id": "v1", "keys": {"v1": key_hex}}))
-    cfg_path = _write_toml(tmp_path, f"""
-        [key_store]
-        backend = "file"
-        path    = "{key_file}"
-    """)
-    from tokenvault.keys.file import FileKeyStore
-    config = load_vault_config(cfg_path)
-    assert isinstance(config.key_store, FileKeyStore)
-
-
-def test_key_store_file_missing_path_raises(tmp_path: Path) -> None:
+def test_key_store_plaintext_file_backend_removed(tmp_path: Path) -> None:
     cfg_path = _write_toml(tmp_path, """
         [key_store]
         backend = "file"
+    """)
+    with pytest.raises(ConfigError, match="plaintext.*removed"):
+        load_vault_config(cfg_path)
+
+
+def test_key_store_encrypted_file_missing_path_raises(tmp_path: Path) -> None:
+    cfg_path = _write_toml(tmp_path, """
+        [key_store]
+        backend = "encrypted_file"
     """)
     with pytest.raises(ConfigError, match="requires a 'path'"):
         load_vault_config(cfg_path)

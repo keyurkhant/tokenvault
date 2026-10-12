@@ -1,15 +1,13 @@
 from __future__ import annotations
 
-import json
 import os
 import secrets
-import tempfile
 
 import pytest
 
 from tokenvault.keys.direct import DirectKeyStore
 from tokenvault.keys.env import EnvKeyStore
-from tokenvault.keys.file import EncryptedFileKeyStore, FileKeyStore
+from tokenvault.keys.file import EncryptedFileKeyStore
 from tokenvault.protocols.key_store import KeyEntropyError
 
 KEY = secrets.token_bytes(32)
@@ -97,43 +95,6 @@ def test_env_list_key_ids(monkeypatch: pytest.MonkeyPatch) -> None:
     ids = store.list_key_ids()
     assert "v1" in ids
     assert "v2" in ids
-
-
-# ──────────────────────────────────────────────────────────────────────────────
-# FileKeyStore (plaintext, deprecated)
-# ──────────────────────────────────────────────────────────────────────────────
-
-def test_file_reads_keys() -> None:
-    data = {"current_key_id": "v1", "keys": {"v1": KEY.hex()}}
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
-        json.dump(data, f)
-        path = f.name
-    with pytest.warns(DeprecationWarning, match="cleartext"):
-        store = FileKeyStore(path=path)
-    assert store.get_key("v1") == KEY
-    assert store.get_current_key_id() == "v1"
-    os.unlink(path)
-
-
-def test_file_rejects_short_key() -> None:
-    data = {"current_key_id": "v1", "keys": {"v1": b"short".hex()}}
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
-        json.dump(data, f)
-        path = f.name
-    with pytest.warns(DeprecationWarning):
-        with pytest.raises(KeyEntropyError):
-            FileKeyStore(path=path)
-    os.unlink(path)
-
-
-def test_file_emits_deprecation_warning() -> None:
-    data = {"current_key_id": "v1", "keys": {"v1": KEY.hex()}}
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
-        json.dump(data, f)
-        path = f.name
-    with pytest.warns(DeprecationWarning, match="EncryptedFileKeyStore"):
-        FileKeyStore(path=path)
-    os.unlink(path)
 
 
 # ──────────────────────────────────────────────────────────────────────────────

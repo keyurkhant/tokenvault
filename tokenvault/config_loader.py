@@ -5,7 +5,7 @@ from typing import Any
 
 from tokenvault.config import VaultConfig
 from tokenvault.keys.env import EnvKeyStore
-from tokenvault.keys.file import FileKeyStore
+from tokenvault.keys.file import EncryptedFileKeyStore
 from tokenvault.matchers.exact import ExactTokenMatcher
 from tokenvault.protocols.audit_sink import AuditSink
 from tokenvault.protocols.key_store import KeyStore
@@ -66,13 +66,16 @@ def _build_key_store(section: dict[str, Any]) -> KeyStore:
         prefix = str(section.get("prefix", "TOKENVAULT_KEY_"))
         return EnvKeyStore(prefix=prefix)
     if backend == "file":
+        raise ConfigError(
+            "[key_store] backend='file' (plaintext) has been removed. "
+            "Use backend='encrypted_file' with EncryptedFileKeyStore instead."
+        )
+    if backend == "encrypted_file":
         file_path = section.get("path")
         if file_path is None:
-            raise ConfigError("[key_store] backend='file' requires a 'path' entry")
-        import warnings
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            return FileKeyStore(path=str(file_path))
+            raise ConfigError("[key_store] backend='encrypted_file' requires a 'path' entry")
+        passphrase_env = str(section.get("passphrase_env", "TOKENVAULT_MASTER_PASS"))
+        return EncryptedFileKeyStore(path=str(file_path), passphrase_env=passphrase_env)
     if backend == "direct":
         raise ConfigError(
             "[key_store] backend='direct' cannot be loaded from a file; "
