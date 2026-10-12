@@ -86,3 +86,61 @@ class PurposeRule:
             policy_id=self.policy_id,
             reason=f"Purpose '{purpose}' != required '{self.required_purpose}'.",
         )
+
+
+@dataclass(frozen=True)
+class RegionAdequacyRule:
+    """Allow transfer only when destination is in an adequacy list."""
+
+    adequate_regions: frozenset[str]
+    policy_id: str = "region-adequacy"
+
+    def evaluate(
+        self, field_type: str, operation: str, context: dict[str, Any]
+    ) -> PolicyDecision | None:
+        if operation != "transfer":
+            return None
+        destination = context.get("destination_region")
+        if destination is None:
+            return None
+        if destination in self.adequate_regions:
+            return PolicyDecision(
+                allowed=True,
+                policy_id=self.policy_id,
+                reason=f"destination {destination!r} has adequacy status.",
+            )
+        return PolicyDecision(
+            allowed=False,
+            policy_id=self.policy_id,
+            reason=f"destination {destination!r} lacks adequacy status.",
+        )
+
+
+@dataclass(frozen=True)
+class SpecialCategoryRule:
+    """Require a specific purpose for special-category field types."""
+
+    special_field_types: frozenset[str]
+    required_purpose: str
+    policy_id: str = "special-category"
+
+    def evaluate(
+        self, field_type: str, operation: str, context: dict[str, Any]
+    ) -> PolicyDecision | None:
+        if field_type not in self.special_field_types:
+            return None
+        purpose = context.get("purpose")
+        if purpose == self.required_purpose:
+            return PolicyDecision(
+                allowed=True,
+                policy_id=self.policy_id,
+                reason=f"Special-category field '{field_type}' approved: purpose '{purpose}'.",
+            )
+        return PolicyDecision(
+            allowed=False,
+            policy_id=self.policy_id,
+            reason=(
+                f"Special-category field '{field_type}' requires purpose "
+                f"'{self.required_purpose}', got {purpose!r}."
+            ),
+        )
